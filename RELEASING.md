@@ -24,7 +24,9 @@ nix flake check
 
 ---
 
-## Release Steps
+## Standard Stable Release
+
+For regular iterative releases (`v0.1.0`, `v0.1.1`, `v0.2.0`), publish directly:
 
 ### 1. Bump the Version
 
@@ -42,28 +44,66 @@ Update `Cargo.lock` by running:
 cargo check
 ```
 
-### 2. Commit Version Bump
+### 2. Commit and Tag
 
 ```bash
 git add Cargo.toml Cargo.lock
 git commit -m "chore: release v0.1.0"
 git push origin main
-```
 
-### 3. Create and Push Git Tag
-
-Create an annotated tag matching the version:
-
-```bash
 git tag -a v0.1.0 -m "Release v0.1.0"
 git push origin v0.1.0
 ```
 
 ---
 
+## Release Candidate (RC) Approach
+
+Release Candidates (`-rc.1`, `-rc.2`, `-beta.1`) are recommended before major milestones (such as `v1.0.0` or major breaking changes) to test across OSes and editor clients before freezing stable versions.
+
+### 1. Set the RC Version
+
+Update `Cargo.toml`:
+
+```toml
+[package]
+name = "sanemark"
+version = "1.0.0-rc.1"
+```
+
+Update `Cargo.lock`:
+
+```bash
+cargo check
+```
+
+### 2. Commit and Tag the RC
+
+```bash
+git add Cargo.toml Cargo.lock
+git commit -m "chore: release v1.0.0-rc.1"
+git push origin main
+
+git tag -a v1.0.0-rc.1 -m "Release v1.0.0-rc.1"
+git push origin v1.0.0-rc.1
+```
+
+### 3. How the Ecosystem Handles Pre-releases
+
+- **GitHub Releases**: The release workflow automatically detects the pre-release tag and marks the release as **`Pre-release`** (it does **not** become the `Latest` release).
+- **One-line installer (`install.sh`)**: Continues to serve the latest stable release; it will **not** serve pre-releases to ordinary users.
+- **Crates.io**: You can publish pre-releases (`cargo publish`). Cargo will ignore pre-releases by default; users only receive it if they explicitly specify `--version 1.0.0-rc.1`.
+- **Package Managers & Editor Registries**: Homebrew, AUR, Nixpkgs, and Mason ignore pre-releases and track only stable tags.
+
+### 4. Graduating from RC to Final Release
+
+Once testing is complete, bump `version = "1.0.0"` in `Cargo.toml`, commit, and tag `v1.0.0`.
+
+---
+
 ## Automated GitHub Release Pipeline
 
-Pushing a `v*` tag automatically triggers the [Release Workflow](.github/workflows/release.yml), which:
+Pushing any `v*` tag automatically triggers the [Release Workflow](.github/workflows/release.yml), which:
 
 1. Cross-compiles optimized binaries for:
    - **Linux**: `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-gnu`, `aarch64-unknown-linux-musl`
@@ -71,7 +111,7 @@ Pushing a `v*` tag automatically triggers the [Release Workflow](.github/workflo
    - **Windows**: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`
 2. Bundles the `sanemark` binary (and `sanemark-lsp` alias), `README.md`, and `LICENSE` into `.tar.gz` (Unix) and `.zip` (Windows) archives.
 3. Computes SHA256 checksums (`.sha256`).
-4. Creates a GitHub Release and attaches all binary archives and checksums.
+4. Creates a GitHub Release (or Pre-release) and attaches all binary archives and checksums.
 
 ---
 
