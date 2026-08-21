@@ -19,10 +19,6 @@ path = "src/lib.rs"
 name = "sanemark"
 path = "src/main.rs"
 
-[[bin]]
-name = "sanemark-lsp"
-path = "src/main.rs"
-
 [dependencies]
 tower-lsp-server = "0.23"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "io-util", "sync", "time"] }
