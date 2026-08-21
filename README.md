@@ -1,9 +1,18 @@
+
+
+
 # sanemark
 
 A markdown language server that implements folding, table formatting, file linking and moving inline links to references in a sane way.
 
 I have been daily driving sanemark for my own notes for a while now.
 
+
+
+
+https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-ed3b7b881a63
+
+  
 ## What it does
 
 ### Standard Markdown links
