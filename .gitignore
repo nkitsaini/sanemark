@@ -1,4 +1,5 @@
 /target
+/editors/zed/target
 /result
 *.log
 .direnv/

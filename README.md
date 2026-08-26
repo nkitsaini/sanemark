@@ -151,36 +151,53 @@ vim.lsp.enable("sanemark")
 
 ### Zed
 
-Zed currently requires using a recognized language-server key. Add the following
-to your project or user settings, replacing the path with an absolute path to
-the binary:
+Install the Sanemark extension from Zed's extension gallery once it is
+published. For local development, run `zed: install dev extension` and select
+the `editors/zed` directory in this repository. The extension uses an existing
+`sanemark` binary on `PATH` or downloads the appropriate binary from the latest
+GitHub release automatically.
+
+To use Sanemark for Markdown formatting, add this to your project or user
+settings:
 
 ```jsonc
 {
   "languages": {
     "Markdown": {
-      "language_servers": ["typescript-language-server"],
+      "language_servers": ["sanemark"],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
-          "name": "typescript-language-server"
+          "name": "sanemark"
         }
-      }
-    }
-  },
-  "lsp": {
-    "typescript-language-server": {
-      "binary": {
-        "path": "/absolute/path/to/sanemark",
-        "arguments": []
       }
     }
   }
 }
 ```
 
-This repurposes an unused adapter key for Markdown. It does not install or run
-the TypeScript language server.
+You can override the downloaded or `PATH` binary and pass initialization
+options through Zed's LSP settings:
+
+```jsonc
+{
+  "lsp": {
+    "sanemark": {
+      "binary": {
+        "path": "/absolute/path/to/sanemark",
+        "arguments": []
+      },
+      "initialization_options": {
+        "formatting": {
+          "formatTables": true,
+          "formatLists": true,
+          "moveReferencesToBottom": true
+        }
+      }
+    }
+  }
+}
+```
 
 ## Performance
 
@@ -202,6 +219,13 @@ To enter the Nix development shell:
 
 ```bash
 nix develop
+```
+
+To check the Zed extension adapter:
+
+```bash
+rustup target add wasm32-wasip2
+cargo check --manifest-path editors/zed/Cargo.toml --target wasm32-wasip2
 ```
 
 ## License

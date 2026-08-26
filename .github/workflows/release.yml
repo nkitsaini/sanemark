@@ -101,8 +101,8 @@ jobs:
           fi
           cp README.md LICENSE "${ARCHIVE_DIR}/"
 
-          7z a "dist/${PKG_NAME}.zip" "./${ARCHIVE_DIR}/*"
           cd dist
+          7z a "${PKG_NAME}.zip" "./${PKG_NAME}/*"
           certutil -hashfile "${PKG_NAME}.zip" SHA256 | findstr -v "hash" | findstr -v "CertUtil" | tr -d ' \r\n' > "${PKG_NAME}.zip.sha256"
           echo "  ${PKG_NAME}.zip" >> "${PKG_NAME}.zip.sha256"
 
