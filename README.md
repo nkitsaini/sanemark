@@ -152,8 +152,7 @@ vim.lsp.enable("sanemark")
 ### Zed
 
 Install the Sanemark extension from Zed's extension gallery once it is
-published. For local development, run `zed: install dev extension` and select
-the `editors/zed` directory in this repository. The extension uses an existing
+published. The extension uses an existing
 `sanemark` binary on `PATH` or downloads the appropriate binary from the latest
 GitHub release automatically.
 
