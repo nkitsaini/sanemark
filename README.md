@@ -13,9 +13,9 @@ I have been daily driving sanemark for my own notes for a while now.
 
 ### 1. Efficiency
 
-With a folder containing more than 400 files, more than 100k words and 20 open tabs, the LSP uses less than 10MB of RAM.
+With my notes folder containing more than 400 files, more than 110k words and 20 open tabs, the LSP used less than 10MB of RAM.
 
-I haven't benchmarked file completion and formatting, but in my day to day all operations have been instantaneous.
+I haven't tested performance of file completion and formatting, but in my day to day all operations have been instantaneous.
 
 ### 2. Usability for note taking
 
