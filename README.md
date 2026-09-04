@@ -3,16 +3,86 @@
 
 # sanemark
 
-A markdown language server that implements folding, table formatting, file linking and moving inline links to references in a sane way.
+A markdown language server that focuses on easy note-taking in IDEs, although things like table formatting make it good for non-note related tasks as well.
+
+Demo Video: https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-ed3b7b881a63
 
 I have been daily driving sanemark for my own notes for a while now.
 
+## What sets it apart?
+
+### 1. Efficiency
+
+With a folder containing more than 400 files, more than 100k words and 20 open tabs, the LSP uses less than 10MB of RAM.
+
+I haven't benchmarked file completion and formatting, but in my day to day all operations have been instantaneous.
+
+### 2. Usability for note taking
+
+These features make it easier to use markdown for note-taking without using a WYSIWYG editor or having a "Preview" pane open on the side.
+
+#### 2.a Cleaner inline links
+Generally when taking notes, I find the inline links very distracting. For example:
+```md
+- Read [Oxide RFD](https://rfd.shared.oxide.computer/rfd/0063) today
+```
+
+The link makes it very hard to read full sentence. This LSP implements a way to format these links to markdown references.
+
+```md
+- Read [Oxide RFD][1] today
+
+# References
+
+[1]: https://rfd.shared.oxide.computer/rfd/0063
+```
+
+I personally find this much more readable and go to definition continues to work. Code actions allow you to convert references to inline links in case you need to copy/paste the content.
 
 
+#### 2.b Standard file linking
 
-https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-ed3b7b881a63
+One more thing that irks me about existing status-quo is that file-linking is non-standard. Most Markdown LSPs either do not provide file completion or use non-standard syntax, most of the time the one used by Obsidian.
 
-  
+It looks like this:
+```md
+
+# What most other LSPs do
+[[./hello.md]]
+
+# What this LSP does
+[hello](./hello.md)
+```
+
+A nice benefit of the standard relative-link syntax shown above is that these links also work on GitHub and most other platforms. This combined with `References` makes it readable as well.
+
+Auto complete can be triggered via `@` or `/` by default.
+
+Similarly I have found the path resolution of LSPs I have tried confusing. This LSP uses document-relative paths or workspace-root paths written with a leading `/` (not the filesystem-absolute paths!).
+
+By default, `auto` uses a hybrid style in Git worktrees: relative paths for siblings and children, and workspace-root paths for other files. Outside Git worktrees, it normally uses relative paths. GitHub works well with both of these.
+
+#### 2.c Daily notes
+
+You can use "Open today's journal note" codeaction to create a daily note. Codeactions on most IDEs can be triggered using `ctrl+.`.
+
+### 3. The basics I expect from a Markdown LSP
+
+The LSP does not require a config, but allows you to configure various aspects. Run `sanemark config` to see all options.
+
+It handles markdown table formatting and can provide fold information to IDEs as well.
+
+
+### 4. Has a CLI interface as well
+
+You can use `sanemark format` to format files and `sanemark lint` to find links to files that don't exist. See `sanemark --help` for all options.
+
+This makes it usable in Git Hooks and CI.
+
+### 5. Reliability
+
+I don't want random bugs popping up when I am in the zone. I haven't seen a single crash in my usage till now and editing my notes have become a more pleasant experience due to this LSP. Please file github issues if you discover any bugs.
+
 ## What it does
 
 ### Standard Markdown links
