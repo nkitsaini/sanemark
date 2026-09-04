@@ -1,6 +1,3 @@
-
-
-
 # sanemark
 
 A markdown language server that focuses on easy note-taking in IDEs, although things like table formatting make it good for non-note related tasks as well.
@@ -13,7 +10,7 @@ I have been daily driving sanemark for my own notes for a while now.
 
 ### 1. Efficiency
 
-With my notes folder containing more than 400 files, more than 110k words and 20 open tabs, the LSP used less than 10MB of RAM.
+With my notes folder containing more than 400 files, more than 110k words and 20 open tabs, the LSP used less than 10 MB of RAM.
 
 I haven't tested performance of file completion and formatting, but in my day to day all operations have been instantaneous.
 
