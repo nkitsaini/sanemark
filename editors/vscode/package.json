@@ -2,7 +2,7 @@
   "name": "sanemark",
   "displayName": "Sanemark Markdown LSP",
   "description": "Fast, zero-config Markdown language server (LSP) providing formatting, link navigation, diagnostics, completions, and daily notes.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "nkit",
   "author": "Ankit Saini <nnkitsaini@gmail.com>",
   "license": "MIT",
@@ -55,75 +55,75 @@
     "commands": [
       {
         "command": "sanemark.checkForUpdates",
-        "title": "Sanemark: Check for Language Server Updates",
+        "title": "Check for Language Server Updates",
         "category": "Sanemark"
       },
       {
-        "command": "sanemark.moveReferencesToBottom",
-        "title": "Sanemark: Move References to Bottom",
+        "command": "sanemark.editor.moveReferencesToBottom",
+        "title": "Move References to Bottom",
         "category": "Sanemark"
       },
       {
-        "command": "sanemark.inlineReferences",
-        "title": "Sanemark: Inline References",
+        "command": "sanemark.editor.inlineReferences",
+        "title": "Inline References",
         "category": "Sanemark"
       },
       {
-        "command": "sanemark.copyAsInlined",
-        "title": "Sanemark: Copy as Inlined Markdown",
+        "command": "sanemark.editor.copyAsInlined",
+        "title": "Copy as Inlined Markdown",
         "category": "Sanemark"
       },
       {
-        "command": "sanemark.convertToInline",
-        "title": "Sanemark: Convert to Inline Link",
+        "command": "sanemark.editor.convertToInline",
+        "title": "Convert to Inline Link",
         "category": "Sanemark"
       },
       {
-        "command": "sanemark.openDailyNote",
-        "title": "Sanemark: Open Today's Journal Note",
+        "command": "sanemark.editor.openDailyNote",
+        "title": "Open Today's Journal Note",
         "category": "Sanemark"
       },
       {
         "command": "sanemark.openYesterdayNote",
-        "title": "Sanemark: Open Yesterday's Journal Note",
+        "title": "Open Yesterday's Journal Note",
         "category": "Sanemark"
       },
       {
         "command": "sanemark.openTomorrowNote",
-        "title": "Sanemark: Open Tomorrow's Journal Note",
+        "title": "Open Tomorrow's Journal Note",
         "category": "Sanemark"
       },
       {
         "command": "sanemark.restartServer",
-        "title": "Sanemark: Restart Language Server",
+        "title": "Restart Language Server",
         "category": "Sanemark"
       },
       {
         "command": "sanemark.downloadServer",
-        "title": "Sanemark: Download or Update Language Server",
+        "title": "Download or Update Language Server",
         "category": "Sanemark"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "sanemark.moveReferencesToBottom",
+          "command": "sanemark.editor.moveReferencesToBottom",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "sanemark.inlineReferences",
+          "command": "sanemark.editor.inlineReferences",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "sanemark.copyAsInlined",
+          "command": "sanemark.editor.copyAsInlined",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "sanemark.convertToInline",
+          "command": "sanemark.editor.convertToInline",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "sanemark.openDailyNote"
+          "command": "sanemark.editor.openDailyNote"
         },
         {
           "command": "sanemark.openYesterdayNote"
@@ -140,17 +140,17 @@
       ],
       "editor/context": [
         {
-          "command": "sanemark.copyAsInlined",
+          "command": "sanemark.editor.copyAsInlined",
           "when": "editorLangId == markdown",
           "group": "sanemark@1"
         },
         {
-          "command": "sanemark.moveReferencesToBottom",
+          "command": "sanemark.editor.moveReferencesToBottom",
           "when": "editorLangId == markdown",
           "group": "sanemark@2"
         },
         {
-          "command": "sanemark.inlineReferences",
+          "command": "sanemark.editor.inlineReferences",
           "when": "editorLangId == markdown",
           "group": "sanemark@3"
         }

@@ -25,27 +25,26 @@ export async function activate(context: vscode.ExtensionContext) {
   log = vscode.window.createOutputChannel("Sanemark", { log: true });
   context.subscriptions.push(log);
 
-  await startServer(context);
-
-  // Register commands
+  // Editor wrappers supply the current document/selection. Keep their IDs
+  // distinct from server-advertised commands registered by LanguageClient.
   context.subscriptions.push(
-    vscode.commands.registerCommand("sanemark.moveReferencesToBottom", async () => {
+    vscode.commands.registerCommand("sanemark.editor.moveReferencesToBottom", async () => {
       await executeDocumentCommand("sanemark.moveReferencesToBottom");
     }),
 
-    vscode.commands.registerCommand("sanemark.inlineReferences", async () => {
+    vscode.commands.registerCommand("sanemark.editor.inlineReferences", async () => {
       await executeDocumentCommand("sanemark.inlineReferences");
     }),
 
-    vscode.commands.registerCommand("sanemark.copyAsInlined", async () => {
+    vscode.commands.registerCommand("sanemark.editor.copyAsInlined", async () => {
       await executeRangeCommand("sanemark.copyAsInlined");
     }),
 
-    vscode.commands.registerCommand("sanemark.convertToInline", async () => {
+    vscode.commands.registerCommand("sanemark.editor.convertToInline", async () => {
       await executeRangeCommand("sanemark.convertToInline");
     }),
 
-    vscode.commands.registerCommand("sanemark.openDailyNote", async () => {
+    vscode.commands.registerCommand("sanemark.editor.openDailyNote", async () => {
       await executeServerCommand("sanemark.openDailyNote", [0]);
     }),
 
@@ -85,6 +84,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  await startServer(context);
   void checkForUpdates(context, false);
   const updateTimer = setInterval(() => void checkForUpdates(context, false), 60 * 60 * 1000);
   context.subscriptions.push({ dispose: () => clearInterval(updateTimer) });
