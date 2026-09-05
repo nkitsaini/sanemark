@@ -6,19 +6,25 @@ Demo Video: https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-e
 
 I have been daily driving sanemark for my own notes for a while now.
 
+## Contents
+
+- [What sets it apart?](#what-sets-it-apart)
+- [Getting started](#getting-started)
+- [Editor setup](#editor-setup): [VS Code / Cursor](#vs-code-cursor-and-compatible-editors), [Zed](#zed), [Neovim](#neovim)
+- [Installation](#installation) (standalone binary)
+- [Command-line usage](#command-line-usage)
+- [Configuration](#configuration)
+- [Development](#development)
+- [License](#license)
+
 ## What sets it apart?
 
-### 1. Efficiency
-
-With my notes folder containing more than 400 files, more than 110k words and 20 open tabs, the LSP used less than 10 MB of RAM.
-
-I haven't tested performance of file completion and formatting, but in my day to day all operations have been instantaneous.
-
-### 2. Usability for note taking
+### Usability for note taking
 
 These features make it easier to use markdown for note-taking without using a WYSIWYG editor or having a "Preview" pane open on the side.
 
-#### 2.a Cleaner inline links
+#### Cleaner inline links
+
 Generally when taking notes, I find the inline links very distracting. For example:
 ```md
 - Read [Oxide RFD](https://rfd.shared.oxide.computer/rfd/0063) today
@@ -36,8 +42,13 @@ The link makes it very hard to read full sentence. This LSP implements a way to 
 
 I personally find this much more readable and go to definition continues to work. Code actions allow you to convert references to inline links in case you need to copy/paste the content.
 
+- Copy a selection with all references expanded using code action
+- Run the same transformations from the CLI
 
-#### 2.b Standard file linking
+Reference definitions are resolved across the whole document, so copied
+selections remain self-contained.
+
+#### Standard file linking
 
 One more thing that irks me about existing status-quo is that file-linking is non-standard. Most Markdown LSPs either do not provide file completion or use non-standard syntax, most of the time the one used by Obsidian.
 
@@ -59,35 +70,7 @@ Similarly I have found the path resolution of LSPs I have tried confusing. This 
 
 By default, `auto` uses a hybrid style in Git worktrees: relative paths for siblings and children, and workspace-root paths for other files. Outside Git worktrees, it normally uses relative paths. GitHub works well with both of these.
 
-#### 2.c Daily notes
-
-You can use "Open today's journal note" codeaction to create a daily note. Codeactions on most IDEs can be triggered using `ctrl+.`.
-
-### 3. The basics I expect from a Markdown LSP
-
-The LSP does not require a config, but allows you to configure various aspects. Run `sanemark config` to see all options.
-
-It handles markdown table formatting and can provide fold information to IDEs as well.
-
-
-### 4. Has a CLI interface as well
-
-You can use `sanemark format` to format files and `sanemark lint` to find links to files that don't exist. See `sanemark --help` for all options.
-
-This makes it usable in Git Hooks and CI.
-
-### 5. Reliability
-
-I don't want random bugs popping up when I am in the zone. I haven't seen a single crash in my usage till now and editing my notes have become a more pleasant experience due to this LSP. Please file github issues if you discover any bugs.
-
-## What it does
-
-### Standard Markdown links
-
-Sanemark completes paths inside ordinary links:
-
 - Fuzzy, workspace-wide file search
-- Relative and workspace-root paths
 - Go to definition and find references
 - Diagnostics for broken local links, with fuzzy quick fixes for misspelled or moved files (up to five suggestions; preserves anchors and queries)
 
@@ -95,114 +78,52 @@ Path completion respects `.gitignore` and works without project configuration.
 File completions and broken-link quick fixes also work in reference definitions
 (`[label]: ./path`), wherever they appear; no special heading is required.
 
-### Reference links without the friction
+#### Daily notes
 
-Keep long URLs and file paths out of the reading flow by moving link definitions
-to the bottom of the document:
+You can use "Open today's journal note" codeaction to create a daily note. Codeactions on most IDEs can be triggered using `ctrl+.`.
 
-- Convert inline links to reference links
-- Convert reference links back to inline links using code action
-- Copy a selection with all references expanded using code action
-- Run the same transformations from the CLI
+Daily notes support optional templates.
 
-Reference definitions are resolved across the whole document, so copied
-selections remain self-contained.
+#### Quick insertion
 
-### Formatting that stays out of the way
+Typing `@` or `/` lets you quickly insert dates, times, and links to files in
+your workspace. This keeps common note-taking actions close at hand while still
+using standard Markdown links.
 
-Sanemark formats GFM tables, normalizes list markers and numbering, and can
-organize reference definitions. Formatting is available through LSP clients
-and the command line.
+### The baseline for a good Markdown LSP
 
-### Useful editing features
+Sanemark formats GFM tables, normalizes list markers and numbering, organizes
+reference definitions, and provides document outlines and folding. Formatting
+is available through LSP clients and the command line.
 
-- Document outline and folding
-- Quick date, time, and file-link insertion with `@` or `/`
-- Daily notes with optional templates
-- Incremental document updates and cached analysis
+#### Efficiency
 
-## Command-line usage
+With my notes folder containing more than 400 files, more than 110k words and 20 open tabs, the LSP used less than 10 MB of RAM.
 
-The same binary works as an LSP server and a command-line tool. Running
-`sanemark` without a subcommand starts the language server over stdio.
+I haven't tested performance of file completion and formatting, but in my day to day all operations have been instantaneous.
 
-```bash
-# Format one file, or every Markdown file in a directory.
-sanemark format README.md
-sanemark format --write .
-sanemark format --check docs/
+Sanemark applies incremental document updates and caches parsed analysis between
+requests.
 
-# Expand reference links and print the result.
-sanemark inline notes.md
-sanemark inline notes.md | wl-copy
+#### Reliability
 
-# Report links and images whose local targets do not exist.
-sanemark lint .
+I don't want random bugs popping up when I am in the zone. I haven't seen a single crash in my usage till now and editing my notes have become a more pleasant experience due to this LSP. Please file github issues if you discover any bugs.
 
-# Print the complete default configuration.
-sanemark config
-```
+## Getting started
 
-Directory commands search recursively for `.md` and `.markdown` files. They
-respect `.gitignore` and skip hidden files by default.
+1. Set up your editor using the instructions below, then open a Markdown file.
+2. Type `@` or `/` to insert file links, dates, and times.
+3. Run your editor's **Format Document** action to format tables and lists and move inline links to reference definitions.
+4. Use code actions to convert reference links back to inline links or **Open today's journal note**.
 
-## Configuration
-
-Sanemark has defaults for every option. Run `sanemark config` to print a
-commented configuration file containing the options supported by your installed
-version.
-
-Settings can come from your editor's LSP initialization options or from
-`.sanemark.json` / `.sanemark.jsonc` in the workspace root:
-
-```jsonc
-{
-  "completion": {
-    "pathStyle": "auto",
-    "prioritizeExtensions": [".md", ".markdown"]
-  },
-  "formatting": {
-    "formatTables": true,
-    "formatLists": true,
-    "moveReferencesToBottom": true
-  },
-  "journal": {
-    "directory": "journal",
-    "template": "journal/template.md"
-  }
-}
-```
-
-Project settings override editor settings, making the same conventions portable
-across editors and the CLI.
-
-## Installation
-
-### Installer
-
-On Linux and macOS:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/nkitsaini/sanemark/main/install.sh | sh
-```
-
-### Cargo
-
-```bash
-cargo install sanemark
-```
-
-### Nix
-
-```bash
-nix run github:nkitsaini/sanemark
-nix profile install github:nkitsaini/sanemark
-```
+No configuration is required by default. See [Configuration](#configuration) to customize formatting, completion, and daily notes.
 
 ## Editor setup
 
-Sanemark speaks standard LSP over stdio. Configure your editor to run the
-`sanemark` binary for Markdown files.
+Start with the extension for your editor. The VS Code and Zed extensions can
+download the language server for you; a separate installation is usually unnecessary.
+For other LSP clients, install the [standalone binary](#installation) and configure
+your editor to run `sanemark` for Markdown files over stdio.
 
 ### VS Code, Cursor, and compatible editors
 
@@ -214,19 +135,9 @@ In VS Code, you can also open Quick Open (`Ctrl+P` / `Cmd+P` on macOS), paste th
 ext install nkit.sanemark
 ```
 
-### Neovim
-
-With Neovim's built-in LSP:
-
-```lua
-vim.lsp.config.sanemark = {
-  cmd = { "sanemark" },
-  filetypes = { "markdown" },
-  root_markers = { ".sanemark.json", ".sanemark.jsonc", ".git" },
-}
-
-vim.lsp.enable("sanemark")
-```
+Open a Markdown file and accept the download prompt if the server is not already
+installed. See the [VS Code extension guide](editors/vscode/README.md) for commands
+and extension settings.
 
 ### Zed
 
@@ -255,6 +166,9 @@ settings:
 }
 ```
 
+<details>
+<summary>Advanced: custom binary and initialization options</summary>
+
 You can override the downloaded or `PATH` binary and pass initialization
 options through Zed's LSP settings:
 
@@ -278,20 +192,118 @@ options through Zed's LSP settings:
 }
 ```
 
-## Performance
+</details>
 
-Sanemark applies incremental document updates and caches parsed analysis between
-requests. Benchmarks cover parsing, formatting, completion, diagnostics, and
-incremental edits:
+### Neovim
+
+Install the [standalone binary](#installation) first, then configure Neovim's built-in LSP:
+
+```lua
+vim.lsp.config.sanemark = {
+  cmd = { "sanemark" },
+  filetypes = { "markdown" },
+  root_markers = { ".sanemark.json", ".sanemark.jsonc", ".git" },
+}
+
+vim.lsp.enable("sanemark")
+```
+
+## Installation
+
+Install the standalone binary for [command-line use](#command-line-usage), Neovim,
+or another editor without automatic server downloads. If your editor extension
+manages the server, you can skip this section.
+
+### Installer
+
+On Linux and macOS:
 
 ```bash
-cargo bench
+curl -fsSL https://raw.githubusercontent.com/nkitsaini/sanemark/main/install.sh | sh
 ```
+
+### Cargo
+
+```bash
+cargo install sanemark
+```
+
+### Nix
+
+```bash
+nix run github:nkitsaini/sanemark
+nix profile install github:nkitsaini/sanemark
+```
+
+## Command-line usage
+
+The same binary works as an LSP server and a command-line tool. Running
+`sanemark` without a subcommand starts the language server over stdio.
+See `sanemark --help` for all options.
+
+```bash
+# Format one file, or every Markdown file in a directory.
+sanemark format README.md
+sanemark format --write .
+sanemark format --check docs/
+
+# Expand reference links and print the result.
+sanemark inline notes.md
+sanemark inline notes.md | wl-copy
+
+# Report links and images whose local targets do not exist.
+sanemark lint .
+
+# Print the complete default configuration.
+sanemark config
+```
+
+Directory commands search recursively for `.md` and `.markdown` files. They
+respect `.gitignore` and skip hidden files by default.
+
+This makes it usable in Git Hooks and CI.
+
+## Configuration
+
+Sanemark has defaults for every option. Run `sanemark config` to print a
+full commented configuration file containing the options supported by your installed
+version.
+
+Settings can come from your editor's LSP initialization options or from
+`.sanemark.json` / `.sanemark.jsonc` in the workspace root:
+
+```jsonc
+{
+  "completion": {
+    "pathStyle": "auto",
+    "prioritizeExtensions": [".md", ".markdown"]
+  },
+  "formatting": {
+    "formatTables": true,
+    "formatLists": true,
+    "moveReferencesToBottom": true
+  },
+  "journal": {
+    "directory": "journal",
+    "template": "journal/template.md"
+  }
+}
+```
+
+Project settings override editor settings, making the same conventions portable
+across editors and the CLI.
 
 ## Development
 
 ```bash
 cargo test
+```
+
+Benchmarks cover parsing, formatting, completion, diagnostics, and
+incremental edits:
+
+```bash
+cargo bench
 ```
 
 To enter the Nix development shell:
