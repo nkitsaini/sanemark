@@ -89,7 +89,7 @@ Sanemark completes paths inside ordinary links:
 - Fuzzy, workspace-wide file search
 - Relative and workspace-root paths
 - Go to definition and find references
-- Diagnostics for broken local links
+- Diagnostics for broken local links, with fuzzy quick fixes for misspelled or moved files (up to five suggestions; preserves anchors and queries)
 
 Path completion respects `.gitignore` and works without project configuration.
 

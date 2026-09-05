@@ -241,7 +241,12 @@ fn collect(
 /// gitignore preferences. `.gitignore` is applied even outside a git repo
 /// (`require_git(false)`) so Markdown workspaces that aren't git repos still get
 /// the expected behaviour.
-fn build_walker(scope: &Path, max_depth: usize, show_hidden: bool, gitignore: bool) -> WalkBuilder {
+pub(crate) fn build_walker(
+    scope: &Path,
+    max_depth: usize,
+    show_hidden: bool,
+    gitignore: bool,
+) -> WalkBuilder {
     let mut builder = WalkBuilder::new(scope);
     builder
         .max_depth(Some(max_depth))
@@ -350,7 +355,7 @@ fn absolute_display(root: &Path, path: &Path, is_dir: bool) -> Option<String> {
 
 /// Lexical relative path from `from` to `to` using `/` separators and `..` as
 /// needed. `None` if they don't share a common prefix (e.g. different drives).
-fn rel_path(from: &Path, to: &Path) -> Option<String> {
+pub(crate) fn rel_path(from: &Path, to: &Path) -> Option<String> {
     let f: Vec<Component> = from.components().collect();
     let t: Vec<Component> = to.components().collect();
 

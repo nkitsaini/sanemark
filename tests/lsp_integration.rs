@@ -465,3 +465,99 @@ async fn jsonc_project_config_is_loaded() {
         "JSONC pathStyle should apply, got: {items:?}"
     );
 }
+
+#[tokio::test]
+async fn broken_link_quick_fixes_preserve_destinations_and_filter_actions() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir(dir.path().join("docs")).unwrap();
+    std::fs::write(dir.path().join("docs/guide book.md"), "").unwrap();
+    std::fs::write(dir.path().join("photo.png"), "").unwrap();
+    std::fs::write(dir.path().join(".ignore"), "ignored.md\n").unwrap();
+    std::fs::write(dir.path().join("ignored.md"), "").unwrap();
+    let uri = sanemark::uri::from_path(&dir.path().join("index.md")).unwrap();
+    let root = sanemark::uri::from_path(dir.path()).unwrap();
+    let mut service = service();
+    call(
+        &mut service,
+        Request::build("initialize")
+            .id(1)
+            .params(
+                json!({"capabilities": {}, "workspaceFolders": [{"uri": root, "name": "test"}]}),
+            )
+            .finish(),
+    )
+    .await;
+    call(
+        &mut service,
+        Request::build("initialized").params(json!({})).finish(),
+    )
+    .await;
+    for (i, (text, expected)) in [
+        (
+            "😀 [guide](./old/guide%20bok.md?raw=1#intro)",
+            Some("./docs/guide%20book.md?raw=1#intro"),
+        ),
+        (
+            "[guide](</docs/guide bok.md#intro>)",
+            Some("/docs/guide%20book.md#intro"),
+        ),
+        (
+            "[guide][g]\n\n[g]: ./guide%20bok.md \"Title\"",
+            Some("./docs/guide%20book.md"),
+        ),
+        ("![photo](./phoot.png)", Some("./photo.png")),
+        ("[exists](./photo.png)", None),
+        ("[external](https://example.com/missing.md)", None),
+        ("[ignored](./ignoredd.md)", None),
+        ("[unrelated](./zzzzzzzzzz.md)", None),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        call(&mut service, Request::build("textDocument/didOpen").params(json!({
+            "textDocument": {"uri": uri, "languageId": "markdown", "version": i as i32 + 1, "text": text}
+        })).finish()).await;
+        let result = ok_result(call(&mut service, Request::build("textDocument/codeAction").id(i as i64 + 2)
+            .params(json!({"textDocument": {"uri": uri},
+                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 10, "character": 0}},
+                "context": {"diagnostics": [], "only": ["quickfix"]}})).finish()).await);
+        let actions = result.as_array().unwrap();
+        if let Some(expected) = expected {
+            assert!(!actions.is_empty(), "{text}");
+            assert_eq!(actions[0]["kind"], "quickfix");
+            let edit = &actions[0]["edit"]["changes"][uri.as_str()][0];
+            assert_eq!(edit["newText"], expected, "{text}");
+            // Apply the returned UTF-16 edit and ensure it repairs the diagnostic.
+            let mut rope = ropey::Rope::from_str(text);
+            let range = serde_json::from_value(edit["range"].clone()).unwrap();
+            let edit = tower_lsp_server::ls_types::TextEdit {
+                range,
+                new_text: expected.into(),
+            };
+            let start = sanemark::encoding::position_to_char(
+                &rope,
+                edit.range.start,
+                sanemark::encoding::PositionEncoding::Utf16,
+            );
+            let end = sanemark::encoding::position_to_char(
+                &rope,
+                edit.range.end,
+                sanemark::encoding::PositionEncoding::Utf16,
+            );
+            rope.remove(start..end);
+            rope.insert(start, expected);
+            let analysis = sanemark::analysis::analyze(&rope.to_string(), 1);
+            assert!(sanemark::features::diagnostics::diagnostics(
+                &analysis,
+                &rope,
+                &Default::default(),
+                sanemark::encoding::PositionEncoding::Utf16,
+                Some(&dir.path().join("index.md")),
+                Some(dir.path())
+            )
+            .is_empty());
+        } else {
+            assert!(actions.is_empty(), "{text}: {actions:?}");
+        }
+    }
+}

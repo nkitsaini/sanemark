@@ -66,6 +66,173 @@ pub fn diagnostics(
     diagnostics
 }
 
+/// Suggest bounded, ranked replacements for current broken-link diagnostics.
+/// Reusing freshly computed diagnostics honours ignore/image settings and avoids
+/// offering edits for stale client diagnostics.
+pub fn fixes(
+    analysis: &Analysis,
+    rope: &Rope,
+    diagnostics: &[Diagnostic],
+    params: &tower_lsp_server::ls_types::CodeActionParams,
+    enc: PositionEncoding,
+    root: Option<&Path>,
+    config: &crate::config::CompletionConfig,
+) -> Vec<tower_lsp_server::ls_types::CodeActionOrCommand> {
+    use tower_lsp_server::ls_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
+    let doc_path = uri::to_path(&params.text_document.uri);
+    let Some(doc_dir) = doc_path.as_deref().and_then(Path::parent) else {
+        return Vec::new();
+    };
+    let root = root.unwrap_or(doc_dir);
+    let relevant: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.range.start <= params.range.end && params.range.start <= d.range.end)
+        .collect();
+    if relevant.is_empty() {
+        return Vec::new();
+    }
+    let files: Vec<_> = super::completion::build_walker(
+        root,
+        config.deep_paths_max_depth.max(1),
+        config.show_hidden_files,
+        config.gitignore,
+    )
+    .build()
+    .take(20_000)
+    .filter_map(Result::ok)
+    .filter(|e| e.file_type().is_some_and(|t| t.is_file()))
+    .map(|e| e.into_path())
+    .collect();
+    let mut actions = Vec::new();
+    for diagnostic in relevant {
+        let Some(target) = analysis
+            .link_targets
+            .iter()
+            .find(|t| range_from_bytes(rope, t.start_byte, t.end_byte, enc) == diagnostic.range)
+        else {
+            continue;
+        };
+        let Some(local) = links::local_target(&target.url) else {
+            continue;
+        };
+        let name = Path::new(&local)
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_lowercase();
+        if name.is_empty() {
+            continue;
+        }
+        let mut matcher = crate::fuzzy::PathMatcher::new(&name);
+        let mut candidates = Vec::new();
+        for path in &files {
+            let candidate = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_lowercase();
+            let distance = edit_distance(&name, &candidate);
+            let score = matcher.score(&candidate);
+            // Edit distance catches substitutions and transpositions, which a
+            // subsequence matcher alone cannot recover.
+            let threshold = (name.chars().count() / 3).clamp(1, 3);
+            if distance > threshold && score.is_none() {
+                continue;
+            }
+            let base = if local.starts_with('/') {
+                root
+            } else {
+                doc_dir
+            };
+            let Some(relative) = super::completion::rel_path(base, path) else {
+                continue;
+            };
+            let display = if local.starts_with('/') {
+                format!("/{relative}")
+            } else if local.starts_with("./") && !relative.starts_with("../") {
+                format!("./{relative}")
+            } else {
+                relative
+            };
+            candidates.push((distance, std::cmp::Reverse(score.unwrap_or(0)), display));
+        }
+        candidates.sort();
+        candidates.truncate(5);
+        // Encode URL delimiters and Markdown destination syntax, preserving the
+        // original fragment/query verbatim.
+        const ESCAPE: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+            .add(b' ')
+            .add(b'%')
+            .add(b'#')
+            .add(b'?')
+            .add(b'(')
+            .add(b')')
+            .add(b'<')
+            .add(b'>')
+            .add(b'\\')
+            .add(b'"')
+            .add(b'\'')
+            .add(b'`');
+        let suffix = target
+            .url
+            .find(['#', '?'])
+            .map(|i| &target.url[i..])
+            .unwrap_or("");
+        for (_, _, display) in candidates {
+            let replacement = format!(
+                "{}{suffix}",
+                percent_encoding::utf8_percent_encode(&display, ESCAPE)
+            );
+            actions.push(
+                CodeAction {
+                    title: format!("Replace with {display}"),
+                    kind: Some(CodeActionKind::QUICKFIX),
+                    diagnostics: Some(vec![diagnostic.clone()]),
+                    edit: Some(WorkspaceEdit {
+                        changes: Some(
+                            [(
+                                params.text_document.uri.clone(),
+                                vec![TextEdit {
+                                    range: diagnostic.range,
+                                    new_text: replacement,
+                                }],
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }
+                .into(),
+            );
+        }
+    }
+    actions
+}
+
+fn edit_distance(a: &str, b: &str) -> usize {
+    let a: Vec<_> = a.chars().collect();
+    let b: Vec<_> = b.chars().collect();
+    // Keep adversarial or unusually long destinations cheap to score.
+    if a.len() > 256 || b.len() > 256 {
+        return usize::MAX;
+    }
+    let mut row: Vec<_> = (0..=b.len()).collect();
+    for (i, x) in a.iter().enumerate() {
+        let mut diagonal = row[0];
+        row[0] = i + 1;
+        for (j, y) in b.iter().enumerate() {
+            let old = row[j + 1];
+            row[j + 1] = (row[j] + 1)
+                .min(old + 1)
+                .min(diagonal + usize::from(x != y));
+            diagonal = old;
+        }
+    }
+    row[b.len()]
+}
+
 fn resolve(base: &Path, local: &str) -> PathBuf {
     let joined = base.join(local.trim_start_matches('/'));
     uri::normalize(&joined)

@@ -573,7 +573,7 @@ impl LanguageServer for Backend {
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
         let uri_arg = serde_json::Value::String(params.text_document.uri.as_str().to_string());
         let range_arg = serde_json::to_value(params.range).unwrap_or(serde_json::Value::Null);
-        let actions = vec![
+        let mut actions = vec![
             command_action(
                 "Markdown: Move link references to bottom",
                 CodeActionKind::REFACTOR_REWRITE,
@@ -620,6 +620,51 @@ impl LanguageServer for Backend {
                 vec![serde_json::Value::from(1i64)],
             ),
         ];
+        let key = uri::key(&params.text_document.uri);
+        if let (Some(rope), Some(analysis)) =
+            (self.state.doc_rope(&key), self.state.analysis_for(&key))
+        {
+            let config = self.config().await;
+            let enc = self.encoding().await;
+            let root = self.workspace_root().await;
+            let doc_path = uri::to_path(&params.text_document.uri);
+            let diags = diagnostics::diagnostics(
+                &analysis,
+                &rope,
+                &config.diagnostics,
+                enc,
+                doc_path.as_deref(),
+                root.as_deref(),
+            );
+            actions.splice(
+                0..0,
+                diagnostics::fixes(
+                    &analysis,
+                    &rope,
+                    &diags,
+                    &params,
+                    enc,
+                    root.as_deref(),
+                    &config.completion,
+                ),
+            );
+        }
+        if let Some(only) = &params.context.only {
+            actions.retain(|action| match action {
+                CodeActionOrCommand::CodeAction(action) => {
+                    action.kind.as_ref().is_some_and(|kind| {
+                        only.iter().any(|requested| {
+                            requested.as_str().is_empty()
+                                || kind == requested
+                                || kind
+                                    .as_str()
+                                    .starts_with(&format!("{}.", requested.as_str()))
+                        })
+                    })
+                }
+                _ => false,
+            });
+        }
         Ok(Some(actions))
     }
 
