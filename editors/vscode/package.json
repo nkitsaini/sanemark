@@ -1,0 +1,288 @@
+{
+  "name": "sanemark",
+  "displayName": "Sanemark",
+  "description": "Fast, zero-config Markdown language server (LSP) providing formatting, link navigation, diagnostics, completions, and daily notes.",
+  "version": "0.1.0",
+  "publisher": "nkit",
+  "author": "Ankit Saini <nnkitsaini@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nkitsaini/sanemark"
+  },
+  "homepage": "https://github.com/nkitsaini/sanemark",
+  "bugs": {
+    "url": "https://github.com/nkitsaini/sanemark/issues"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "markdown",
+    "lsp",
+    "language-server",
+    "formatter",
+    "linter",
+    "links",
+    "journal"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "scripts": {
+    "compile": "bun build ./src/extension.ts --target=node --outfile=./dist/extension.js --external=vscode --minify",
+    "watch": "bun build ./src/extension.ts --target=node --outfile=./dist/extension.js --external=vscode --watch",
+    "check": "tsc --noEmit",
+    "package": "bun run check && bun run compile && bun x @vscode/vsce package --no-dependencies",
+    "publish:vscode": "bun run check && bun run compile && bun x @vscode/vsce publish --no-dependencies",
+    "publish:openvsx": "bun run package && bun x ovsx publish *.vsix"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^10.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.4.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "sanemark.moveReferencesToBottom",
+        "title": "Sanemark: Move References to Bottom",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.inlineReferences",
+        "title": "Sanemark: Inline References",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.copyAsInlined",
+        "title": "Sanemark: Copy as Inlined Markdown",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.convertToInline",
+        "title": "Sanemark: Convert to Inline Link",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.openDailyNote",
+        "title": "Sanemark: Open Today's Journal Note",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.openYesterdayNote",
+        "title": "Sanemark: Open Yesterday's Journal Note",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.openTomorrowNote",
+        "title": "Sanemark: Open Tomorrow's Journal Note",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.restartServer",
+        "title": "Sanemark: Restart Language Server",
+        "category": "Sanemark"
+      },
+      {
+        "command": "sanemark.downloadServer",
+        "title": "Sanemark: Download or Update Language Server",
+        "category": "Sanemark"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "sanemark.moveReferencesToBottom",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "sanemark.inlineReferences",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "sanemark.copyAsInlined",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "sanemark.convertToInline",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "sanemark.openDailyNote"
+        },
+        {
+          "command": "sanemark.openYesterdayNote"
+        },
+        {
+          "command": "sanemark.openTomorrowNote"
+        },
+        {
+          "command": "sanemark.restartServer"
+        },
+        {
+          "command": "sanemark.downloadServer"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "sanemark.copyAsInlined",
+          "when": "editorLangId == markdown",
+          "group": "sanemark@1"
+        },
+        {
+          "command": "sanemark.moveReferencesToBottom",
+          "when": "editorLangId == markdown",
+          "group": "sanemark@2"
+        },
+        {
+          "command": "sanemark.inlineReferences",
+          "when": "editorLangId == markdown",
+          "group": "sanemark@3"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Sanemark",
+      "properties": {
+        "sanemark.serverPath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "scope": "machine-overridable",
+          "description": "Path to the sanemark executable. When unset, the extension searches PATH, then falls back to cached/downloaded release binaries."
+        },
+        "sanemark.gfm": {
+          "type": "boolean",
+          "default": true,
+          "description": "Parse GitHub Flavored Markdown (tables, task lists, autolinks, etc.)."
+        },
+        "sanemark.formatting.moveReferencesToBottom": {
+          "type": "boolean",
+          "default": true,
+          "description": "When formatting a document, consolidate references at the bottom of the file."
+        },
+        "sanemark.formatting.referencesHeading": {
+          "type": "string",
+          "default": "References",
+          "description": "Heading text used for the generated references section."
+        },
+        "sanemark.formatting.formatTables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Normalise GFM tables during formatting (align columns, add missing pipes/delimiters)."
+        },
+        "sanemark.formatting.formatLists": {
+          "type": "boolean",
+          "default": true,
+          "description": "Normalise list markers and numbering during formatting."
+        },
+        "sanemark.diagnostics.brokenLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warn about links/images that point to local files that do not exist."
+        },
+        "sanemark.diagnostics.severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "information",
+            "hint"
+          ],
+          "default": "warning",
+          "description": "Severity level used for broken-link diagnostics."
+        },
+        "sanemark.diagnostics.checkImages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate image destinations in addition to regular hyperlinks."
+        },
+        "sanemark.diagnostics.ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Glob patterns whose matching targets are ignored during broken-link checks."
+        },
+        "sanemark.completion.paths": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable link and image path completions."
+        },
+        "sanemark.completion.pathStyle": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "relative",
+            "absolute",
+            "hybrid"
+          ],
+          "default": "auto",
+          "description": "Presentation style for file path completions."
+        },
+        "sanemark.completion.showHiddenFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "Offer hidden dotfiles/directories in completions."
+        },
+        "sanemark.completion.gitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Respect .gitignore and git excludes when discovering completion files."
+        },
+        "sanemark.completion.deepPaths": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fuzzy-match nested paths in completion menus."
+        },
+        "sanemark.snippets.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable quick-command menus triggered by / and @."
+        },
+        "sanemark.snippets.fileLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer workspace files in quick-command menus."
+        },
+        "sanemark.snippets.dateFormat": {
+          "type": "string",
+          "default": "%Y-%m-%d",
+          "description": "Date format string used for date snippets."
+        },
+        "sanemark.snippets.timeFormat": {
+          "type": "string",
+          "default": "%H:%M",
+          "description": "Time format string used for time snippets."
+        },
+        "sanemark.journal.directory": {
+          "type": "string",
+          "default": "journal",
+          "description": "Directory relative to workspace root storing daily notes."
+        },
+        "sanemark.journal.template": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Path to Markdown template file used when creating new daily notes."
+        }
+      }
+    }
+  }
+}
