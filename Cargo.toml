@@ -1,6 +1,6 @@
 [package]
 name = "sanemark"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "The sane, zero-config Markdown language server (LSP) and CLI toolchain"
 license = "MIT"
