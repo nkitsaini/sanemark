@@ -1,4 +1,4 @@
-//! Path completion inside link / image destinations.
+//! Path completion inside link, image, and reference-definition destinations.
 //!
 //! Completion is driven by the *text around the cursor* rather than the AST:
 //! while typing `[x](./pa` the destination isn't a valid link yet, so there is
@@ -91,7 +91,9 @@ pub fn complete(
     let line_start_char = rope.line_to_char(line_idx);
     let before: String = rope.slice(line_start_char..cursor_char).chars().collect();
 
-    let mut ctx = match detect_context(&before) {
+    let mut ctx = match detect_context(&before)
+        .or_else(|| reference_context(&rope.slice(..cursor_char).to_string()))
+    {
         Some(ctx) => ctx,
         None => return Vec::new(),
     };
@@ -416,8 +418,32 @@ fn detect_context(before: &str) -> Option<PathContext> {
     if let Some(stripped) = partial.strip_prefix('<') {
         partial = stripped;
     }
-    // Never complete over an external URL or a bare anchor.
-    if partial.starts_with('#') || partial.contains("://") || has_scheme(partial) {
+    path_context(partial)
+}
+
+/// Recognize definitions through the Markdown parser, including definitions in
+/// containers or with destinations on the next line. A temporary filename makes
+/// an empty/incomplete destination parseable. This also excludes fenced code,
+/// prose, labels, and titles without relying on a particular section heading.
+fn reference_context(before: &str) -> Option<PathContext> {
+    const MARKER: &str = "sanemark-completion-placeholder";
+    for closing in ["", ">"] {
+        let text = format!("{before}{MARKER}{closing}\n");
+        let analysis = crate::analysis::analyze(&text, 0);
+        if let Some(def) = analysis.definitions.iter().find(|def| {
+            def.url.ends_with(MARKER)
+                && def.url_start <= before.len()
+                && def.url_end == before.len() + MARKER.len()
+        }) {
+            return path_context(&before[def.url_start..]);
+        }
+    }
+    None
+}
+
+fn path_context(partial: &str) -> Option<PathContext> {
+    // Queries and fragments are no longer the filesystem portion of a URL.
+    if partial.contains(['#', '?']) || partial.starts_with("//") || has_scheme(partial) {
         return None;
     }
 
@@ -520,6 +546,85 @@ mod tests {
             Some(doc),
             Some(root),
         )
+    }
+
+    #[test]
+    fn reference_completions_are_independent_of_headings() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("alpha.md"), "").unwrap();
+        let doc = dir.path().join("index.md");
+        for (text, expected) in [
+            ("[ref]: ./al|", "[ref]: ./alpha.md"),
+            (
+                "# References\n\n[ref]: ./al|",
+                "# References\n\n[ref]: ./alpha.md",
+            ),
+            (
+                "# Anything\n\n[unused]: ./al|",
+                "# Anything\n\n[unused]: ./alpha.md",
+            ),
+            (
+                "[😀 label]: <./al|> \"Title\"",
+                "[😀 label]: <./alpha.md> \"Title\"",
+            ),
+            ("   [ref]:\t./al|", "   [ref]:\t./alpha.md"),
+            ("[ref]:\n  ./al|", "[ref]:\n  ./alpha.md"),
+            ("> [ref]: ./al|", "> [ref]: ./alpha.md"),
+            ("- [ref]: ./al|", "- [ref]: ./alpha.md"),
+            ("[ref]: |", "[ref]: ./alpha.md"),
+            ("[ref]: <|>", "[ref]: <./alpha.md>"),
+            ("[ref]: /al|", "[ref]: /alpha.md"),
+        ] {
+            let cursor = text.find('|').unwrap();
+            let text = text.replace('|', "");
+            let mut rope = Rope::from_str(&text);
+            let position = char_to_position(
+                &rope,
+                text[..cursor].chars().count(),
+                PositionEncoding::Utf16,
+            );
+            let items = complete(
+                &rope,
+                position,
+                PositionEncoding::Utf16,
+                &CompletionConfig::default(),
+                Some(&doc),
+                Some(dir.path()),
+            );
+            let item = items
+                .iter()
+                .find(|item| item.label.ends_with("alpha.md"))
+                .unwrap_or_else(|| panic!("no completion for {text:?}"));
+            let Some(CompletionTextEdit::Edit(edit)) = &item.text_edit else {
+                panic!("expected edit")
+            };
+            let start = position_to_char(&rope, edit.range.start, PositionEncoding::Utf16);
+            let end = position_to_char(&rope, edit.range.end, PositionEncoding::Utf16);
+            rope.remove(start..end);
+            rope.insert(start, &edit.new_text);
+            assert_eq!(rope.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn reference_completion_excludes_non_destinations() {
+        for text in [
+            "[ref",
+            "[ref]: ./alpha.md \"title",
+            "[ref]: <./alpha.md> ",
+            "[ref]: https://example.com/al",
+            "[ref]: //example.com/al",
+            "[ref]: #al",
+            "[ref]: ./alpha.md#al",
+            "[ref]: ./alpha.md?q=al",
+            "prose [ref]: ./al",
+            "    [ref]: ./al",
+            "```md\n[ref]: ./al",
+            "~~~\n[ref]: ./al",
+            "[ ]: ./al",
+        ] {
+            assert!(reference_context(text).is_none(), "{text:?}");
+        }
     }
 
     #[test]

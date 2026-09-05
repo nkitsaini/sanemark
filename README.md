@@ -92,6 +92,8 @@ Sanemark completes paths inside ordinary links:
 - Diagnostics for broken local links, with fuzzy quick fixes for misspelled or moved files (up to five suggestions; preserves anchors and queries)
 
 Path completion respects `.gitignore` and works without project configuration.
+File completions and broken-link quick fixes also work in reference definitions
+(`[label]: ./path`), wherever they appear; no special heading is required.
 
 ### Reference links without the friction
 
