@@ -230,9 +230,10 @@ vim.lsp.enable("sanemark")
 
 ### Zed
 
-Install the Sanemark extension from Zed's extension gallery once it is
-published. The extension uses an existing
-`sanemark` binary on `PATH` or downloads the appropriate binary from the latest
+Install the Sanemark extension from Zed's extension gallery [once it is
+published](https://github.com/zed-industries/extensions/pull/7344). In the meanwhile you can use the workaround documented in this [Github discussion](https://github.com/zed-industries/zed/discussions/24092#discussioncomment-15278796).
+
+The extension uses an existing `sanemark` binary on `PATH` or downloads the appropriate binary from the latest
 GitHub release automatically.
 
 To use Sanemark for Markdown formatting, add this to your project or user
