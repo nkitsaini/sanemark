@@ -10,10 +10,16 @@ import {
   resolveBinary,
   downloadLatestRelease,
   getPlatformInfo,
+  managedBinary,
+  binaryVersion,
+  fetchLatestRelease,
+  isNewerRelease,
 } from "./downloader";
 
 let client: LanguageClient | undefined;
 let log: vscode.LogOutputChannel | undefined;
+let activeBinary: string | undefined;
+let updateInProgress = false;
 
 export async function activate(context: vscode.ExtensionContext) {
   log = vscode.window.createOutputChannel("Sanemark", { log: true });
@@ -56,17 +62,10 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("sanemark.downloadServer", async () => {
-      const platform = getPlatformInfo();
-      if (!platform) {
-        vscode.window.showErrorMessage(
-          `Sanemark: Unsupported platform (${process.platform} ${process.arch}).`
-        );
-        return;
-      }
-      const newBinary = await downloadLatestRelease(context, platform);
-      if (newBinary) {
-        await restartServer(context);
-      }
+      await checkForUpdates(context, true);
+    }),
+    vscode.commands.registerCommand("sanemark.checkForUpdates", async () => {
+      await checkForUpdates(context, true);
     })
   );
 
@@ -85,6 +84,53 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  void checkForUpdates(context, false);
+  const updateTimer = setInterval(() => void checkForUpdates(context, false), 60 * 60 * 1000);
+  context.subscriptions.push({ dispose: () => clearInterval(updateTimer) });
+}
+
+async function checkForUpdates(context: vscode.ExtensionContext, manual: boolean): Promise<void> {
+  if (updateInProgress) return;
+  const config = vscode.workspace.getConfiguration("sanemark");
+  if (!manual && !config.get<boolean>("checkForUpdates", true)) return;
+  // Only manage the binary selected by this extension. Respect PATH and overrides.
+  if (config.get<string>("serverPath")?.trim() || (activeBinary && activeBinary !== managedBinary(context))) {
+    if (manual) void vscode.window.showInformationMessage("Sanemark is using a custom or PATH-installed server. Update it using your package manager or installation method.");
+    return;
+  }
+  const lastCheck = context.globalState.get<number>("server.lastUpdateCheck", 0);
+  if (!manual && Date.now() - lastCheck < 24 * 60 * 60 * 1000) return;
+  updateInProgress = true;
+  try {
+    const platform = getPlatformInfo();
+    if (!platform) throw new Error(`Unsupported platform (${process.platform} ${process.arch}).`);
+    const binary = activeBinary ?? managedBinary(context);
+    if (!binary) {
+      if (manual && await downloadLatestRelease(context, platform)) await restartServer(context);
+      return;
+    }
+    await context.globalState.update("server.lastUpdateCheck", Date.now());
+    const installed = await binaryVersion(binary);
+    if (!installed) throw new Error("Could not determine the installed server version.");
+    const release = await fetchLatestRelease();
+    if (!isNewerRelease(release.tag_name, installed)) {
+      if (manual) void vscode.window.showInformationMessage(`Sanemark ${installed} is up to date.`);
+      return;
+    }
+    const choice = await vscode.window.showInformationMessage(
+      `Sanemark ${release.tag_name} is available (installed: ${installed}).`,
+      "Update and Restart", "Later"
+    );
+    if (choice === "Update and Restart" && await downloadLatestRelease(context, platform, release)) {
+      await restartServer(context);
+    }
+  } catch (error) {
+    log?.warn(`Server update check failed: ${error}`);
+    if (manual) void vscode.window.showErrorMessage(`Sanemark update check failed: ${error}`);
+  } finally {
+    updateInProgress = false;
+  }
 }
 
 export async function deactivate(): Promise<void> {
@@ -102,6 +148,7 @@ async function startServer(context: vscode.ExtensionContext): Promise<void> {
   }
 
   log?.info(`Using language server executable: ${binaryPath}`);
+  activeBinary = binaryPath;
 
   const serverExecutable: Executable = {
     command: binaryPath,

@@ -28,6 +28,21 @@ This extension brings the full power of Sanemark to VS Code: reference-link mana
 ### Automatic Binary Setup
 By default, the extension will check if `sanemark` is available on your `$PATH`. If not found, it prompts you to automatically download the latest pre-compiled binary release for your platform directly from GitHub Releases.
 
+For extension-downloaded servers, the extension checks GitHub for a newer stable
+release after activation and periodically while VS Code stays open, at most once
+every 24 hours. Choose **Update and Restart** to install it and restart the server,
+or **Later** to defer until a future check. Background check failures are recorded
+in the Sanemark Output channel and do not prevent the installed server from running.
+Disable automatic checks with `"sanemark.checkForUpdates": false`.
+
+Run **Sanemark: Check for Language Server Updates** to check immediately, even when
+automatic checks are disabled. **Download or Update Language Server** also checks
+for updates, or downloads a server if none is installed. Servers configured through
+`sanemark.serverPath` or found on PATH must be updated using their installation
+method. VS Code's extension auto-update setting updates the extension separately.
+New downloads use separate directories; previous binaries are retained so other
+open VS Code windows can continue using them until restarted.
+
 ### Manual Setup
 If you prefer to compile or manage the binary yourself:
 
@@ -67,6 +82,7 @@ All commands can be found in the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`
 | `Sanemark: Open Tomorrow's Journal Note` | Opens tomorrow's daily journal note. |
 | `Sanemark: Restart Language Server` | Restarts the background Sanemark language server process. |
 | `Sanemark: Download or Update Language Server` | Downloads the latest Sanemark binary release for your system. |
+| `Sanemark: Check for Language Server Updates` | Checks immediately and offers to update the extension-managed server. |
 
 ---
 

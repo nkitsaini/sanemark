@@ -1,8 +1,8 @@
 {
   "name": "sanemark",
-  "displayName": "Sanemark",
+  "displayName": "Sanemark Markdown LSP",
   "description": "Fast, zero-config Markdown language server (LSP) providing formatting, link navigation, diagnostics, completions, and daily notes.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "nkit",
   "author": "Ankit Saini <nnkitsaini@gmail.com>",
   "license": "MIT",
@@ -53,6 +53,11 @@
   },
   "contributes": {
     "commands": [
+      {
+        "command": "sanemark.checkForUpdates",
+        "title": "Sanemark: Check for Language Server Updates",
+        "category": "Sanemark"
+      },
       {
         "command": "sanemark.moveReferencesToBottom",
         "title": "Sanemark: Move References to Bottom",
@@ -155,6 +160,12 @@
       "type": "object",
       "title": "Sanemark",
       "properties": {
+        "sanemark.checkForUpdates": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "description": "Check daily for updates to the extension-managed language server and offer to download and restart. Custom and PATH-installed servers are managed separately."
+        },
         "sanemark.serverPath": {
           "type": [
             "string",
