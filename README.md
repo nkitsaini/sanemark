@@ -204,6 +204,16 @@ nix profile install github:nkitsaini/sanemark
 Sanemark speaks standard LSP over stdio. Configure your editor to run the
 `sanemark` binary for Markdown files.
 
+### VS Code, Cursor, and compatible editors
+
+Install **Sanemark Markdown LSP** from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=nkit.sanemark) or [Open VSX](https://open-vsx.org/extension/nkit/sanemark).
+
+In VS Code, you can also open Quick Open (`Ctrl+P` / `Cmd+P` on macOS), paste the following command, and press Enter:
+
+```text
+ext install nkit.sanemark
+```
+
 ### Neovim
 
 With Neovim's built-in LSP:
