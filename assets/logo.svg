@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 128 128" fill="none" color="#343B3E" role="img" aria-labelledby="title desc">
+  <title id="title">Sanemark</title>
+  <desc id="desc">A rounded Markdown notebook with a thin underline centered beneath the M and a muted blue typing cursor.</desc>
+  <rect x="25" y="23" width="78" height="84" rx="13" stroke="currentColor" stroke-width="5.5"/>
+  <path d="M40 25v80M20 43h11M20 66h11M20 89h11" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M52 73V47l12 17 12-17v26" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M52 88h24" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M88 47v26" stroke="#6B80BB" stroke-width="5" stroke-linecap="round"/>
+</svg>

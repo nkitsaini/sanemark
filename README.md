@@ -1,4 +1,9 @@
-# sanemark
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg">
+    <img src="assets/wordmark.svg" alt="Sanemark" width="390" height="96">
+  </picture>
+</h1>
 
 A markdown language server that focuses on easy note-taking in IDEs, although things like table formatting make it good for non-note related tasks as well.
 

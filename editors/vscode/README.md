@@ -1,3 +1,7 @@
+<p>
+  <img src="https://raw.githubusercontent.com/nkitsaini/sanemark/main/editors/vscode/images/icon.png" alt="Sanemark logo" width="80" height="80">
+</p>
+
 # Sanemark for Visual Studio Code
 
 [Sanemark](https://github.com/nkitsaini/sanemark) is a fast, zero-config Markdown language server and toolchain written in Rust.
