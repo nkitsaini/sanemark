@@ -73,12 +73,7 @@ fn config_prints_documented_default_jsonc() {
 fn readme_prints_documentation() {
     let (code, stdout) = run(&["readme"], "");
     assert_eq!(code, 0);
-    assert!(
-        stdout.contains("# sanemark"),
-        "got start: {:?}",
-        &stdout[..stdout.len().min(80)]
-    );
-    assert!(stdout.contains("Configuration"));
+    assert_eq!(stdout, include_str!("../README.md"));
 }
 
 #[test]
