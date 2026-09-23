@@ -134,12 +134,6 @@ your editor to run `sanemark` for Markdown files over stdio.
 
 Install **Sanemark Markdown LSP** from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=nkit.sanemark) or [Open VSX](https://open-vsx.org/extension/nkit/sanemark).
 
-In VS Code, you can also open Quick Open (`Ctrl+P` / `Cmd+P` on macOS), paste the following command, and press Enter:
-
-```text
-ext install nkit.sanemark
-```
-
 Open a Markdown file and accept the download prompt if the server is not already
 installed. See the [VS Code extension guide](editors/vscode/README.md) for commands
 and extension settings.
