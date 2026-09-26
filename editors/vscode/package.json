@@ -2,7 +2,7 @@
   "name": "sanemark",
   "displayName": "Sanemark Markdown LSP",
   "description": "Fast, zero-config Markdown language server (LSP) providing formatting, link navigation, diagnostics, completions, and daily notes.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "nkit",
   "icon": "images/icon.png",
   "author": "Ankit Saini <nnkitsaini@gmail.com>",

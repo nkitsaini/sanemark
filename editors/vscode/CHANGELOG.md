@@ -2,6 +2,10 @@
 
 All notable changes to the "sanemark" extension will be documented in this file.
 
+## [0.1.3] - 2026-09-15
+
+- Added the Sanemark notebook logo as the extension icon and to the Marketplace README.
+
 ## [0.1.0] - 2026-09-04
 
 - Initial release of the Sanemark VS Code extension.
