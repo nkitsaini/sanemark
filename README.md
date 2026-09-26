@@ -7,7 +7,9 @@
 
 A markdown language server that focuses on easy note-taking in IDEs, although things like table formatting make it good for non-note related tasks as well.
 
-Demo Video: https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-ed3b7b881a63
+Demo Video:
+
+https://github.com/user-attachments/assets/7e4f892f-30bb-432b-a20a-ed3b7b881a63
 
 I have been daily driving sanemark for my own notes for a while now.
 
