@@ -138,3 +138,32 @@ fn lint_reports_missing_files() {
         "should not flag existing file: {stdout}"
     );
 }
+
+#[test]
+fn format_table_with_links_and_email_passes_check_after_one_write() {
+    let dir = tempdir().unwrap();
+    let file = dir.path().join("links.md");
+    std::fs::write(
+        &file,
+        "| a | b |\n| --- | --- |\n| [site](https://nkit.dev) | ak@example.com |\n",
+    )
+    .unwrap();
+    let path = file.to_str().unwrap();
+    let (code, _) = run(&["format", "--move-references", "--write", path], "");
+    assert_eq!(code, 0);
+    let written = std::fs::read_to_string(&file).unwrap();
+    assert_eq!(
+        written,
+        "| a         | b              |\n\
+         | --------- | -------------- |\n\
+         | [site][1] | ak@example.com |\n\n\
+         # References\n\n[1]: https://nkit.dev\n"
+    );
+    let (code, _) = run(&["format", "--move-references", "--check", path], "");
+    assert_eq!(code, 0);
+    for _ in 0..3 {
+        let (code, _) = run(&["format", "--move-references", "--write", path], "");
+        assert_eq!(code, 0);
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), written);
+    }
+}

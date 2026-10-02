@@ -115,6 +115,46 @@ fn autolinks_are_left_as_is() {
 }
 
 #[test]
+fn autolink_syntax_is_preserved_across_repeated_conversions() {
+    for gfm in [false, true] {
+        for autolink in [
+            "ak@example.com",
+            "<ak@example.com>",
+            "<mailto:ak@example.com>",
+            "www.example.com",
+            "https://example.com",
+            "<https://example.com>",
+            "<https://example.com?a=1&amp;b=2>",
+        ] {
+            let input = format!("Contact {autolink}, or [visit](https://nkit.dev).\n");
+            let expected = format!(
+                "Contact {autolink}, or [visit][1].\n\n# References\n\n[1]: https://nkit.dev\n"
+            );
+            let mut out = input;
+            for _ in 0..3 {
+                out = to_reference_links(&out, gfm, true, "References");
+                assert_eq!(out, expected, "autolink: {autolink}, gfm: {gfm}");
+            }
+        }
+    }
+}
+
+#[test]
+fn explicit_links_with_url_or_email_labels_become_references() {
+    for (label, url) in [
+        ("https://example.com", "https://example.com"),
+        ("ak@example.com", "mailto:ak@example.com"),
+        ("mailto:ak@example.com", "mailto:ak@example.com"),
+        ("www.example.com", "http://www.example.com"),
+    ] {
+        let input = format!("[{label}]({url})\n");
+        let expected = format!("[{label}][1]\n\n# References\n\n[1]: {url}\n");
+        assert_eq!(refs(&input), expected);
+        assert_eq!(refs(&expected), expected);
+    }
+}
+
+#[test]
 fn preserves_list_blank_line_spacing() {
     let input = "# Random scratch pad\n\n1. Hi\n2. Hi\n\n3. [Hi][1]\n\n# References\n[1]: /file";
     assert_eq!(
@@ -166,6 +206,67 @@ fn format_document_can_disable_list_formatting() {
     };
     let input = "* one\n* two\n";
     assert_eq!(format_document(input, true, &cfg), input);
+}
+
+#[test]
+fn tables_and_links_are_fully_formatted_in_one_call() {
+    let input = "| asdfj | sdlfj       |\n\
+                 | ----- | ----------- |\n\
+                 |       | [sdlkfj](https://nkit.dev) |\n\
+                 |       | ak@example.com |\n";
+    let expected = "| asdfj | sdlfj          |\n\
+                    | ----- | -------------- |\n\
+                    |       | [sdlkfj][1]    |\n\
+                    |       | ak@example.com |\n\n\
+                    # References\n\n\
+                    [1]: https://nkit.dev\n";
+    let cfg = FormattingConfig::default();
+    let mut out = input.to_string();
+    for _ in 0..3 {
+        out = format_document(&out, true, &cfg);
+        assert_eq!(out, expected);
+    }
+}
+
+#[test]
+fn table_repair_exposes_links_in_extra_cells_before_conversion() {
+    // GFM discards body cells beyond the header's column count. Repair must
+    // happen before parsing links, and final padding after their conversion.
+    let input = "| a |\n| --- |\n| b | [x](https://example.com) |\n";
+    let expected = "| a   |        |\n\
+                    | --- | ------ |\n\
+                    | b   | [x][1] |\n\n\
+                    # References\n\n\
+                    [1]: https://example.com\n";
+    let cfg = FormattingConfig::default();
+    assert_eq!(format_document(input, true, &cfg), expected);
+    assert_eq!(format_document(expected, true, &cfg), expected);
+}
+
+#[test]
+fn repaired_header_only_tables_format_links_in_one_call() {
+    let input = "| a | [x](https://example.com) |\n";
+    let expected = "| a   | [x][1] |\n\
+                    | --- | ------ |\n\
+                    |     |        |\n\n\
+                    # References\n\n\
+                    [1]: https://example.com\n";
+    let cfg = FormattingConfig::default();
+    assert_eq!(format_document(input, true, &cfg), expected);
+    assert_eq!(format_document(expected, true, &cfg), expected);
+}
+
+#[test]
+fn table_padding_remains_disabled_when_converting_links() {
+    let input = "| a | b |\n| --- | --- |\n| x | [y](https://example.com) |\n";
+    let expected = "| a | b |\n| --- | --- |\n| x | [y][1] |\n\n\
+                    # References\n\n[1]: https://example.com\n";
+    let cfg = FormattingConfig {
+        format_tables: false,
+        ..FormattingConfig::default()
+    };
+    assert_eq!(format_document(input, true, &cfg), expected);
+    assert_eq!(format_document(expected, true, &cfg), expected);
 }
 
 // ---------------------------------------------------------------------------

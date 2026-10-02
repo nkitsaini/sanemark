@@ -24,10 +24,12 @@ use crate::analysis::node_text;
 use crate::config::FormattingConfig;
 use crate::features::{lists, tables};
 
-/// Run the full document formatter: table normalisation followed (optionally) by
-/// consolidating reference links at the bottom. This is what both
+/// Run the full document formatter: repair tables, normalise lists, consolidate
+/// reference links, then align tables using the final cell contents. This is what both
 /// `textDocument/formatting` and the `format` CLI run.
 pub fn format_document(source: &str, gfm: bool, config: &FormattingConfig) -> String {
+    // Repair table structure before parsing: GFM otherwise ignores body cells
+    // beyond the header's column count, including any links in those cells.
     let mut out = if config.format_tables {
         tables::format_tables(source)
     } else {
@@ -38,6 +40,11 @@ pub fn format_document(source: &str, gfm: bool, config: &FormattingConfig) -> St
     }
     if config.move_references_to_bottom {
         out = to_reference_links(&out, gfm, true, &config.references_heading);
+        if config.format_tables {
+            // Link conversion changes cell widths. Recompute padding now so a
+            // single format request produces fully aligned tables.
+            out = tables::format_tables(&out);
+        }
     }
     out
 }
@@ -103,7 +110,10 @@ pub fn to_reference_links(
     for node in &nodes {
         let Node::Link(link) = node else { continue };
         let Some(pos) = &link.position else { continue };
-        if is_autolink(node, &link.url) {
+        // mdast uses Link for both explicit links and autolinks. Only `[...](...)`
+        // has a bracketed label to rewrite; comparing label text to the URL is
+        // unreliable (email and www autolinks gain a scheme in their URL).
+        if source.as_bytes().get(pos.start.offset) != Some(&b'[') {
             continue;
         }
 
@@ -358,19 +368,6 @@ fn all_nodes(root: &Node) -> Vec<&Node> {
     }
     rec(root, &mut out);
     out
-}
-
-/// True for `<url>` / GFM literal autolinks (a link whose sole child is text
-/// equal to the URL) — those are left untouched, matching the reference.
-fn is_autolink(node: &Node, url: &str) -> bool {
-    if let Some(children) = node.children() {
-        if children.len() == 1 {
-            if let Node::Text(t) = &children[0] {
-                return t.value == url;
-            }
-        }
-    }
-    false
 }
 
 /// Byte offset of a link's closing `]` (end of the last label child), or just
